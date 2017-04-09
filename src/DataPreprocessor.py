@@ -14,7 +14,8 @@ def getMoviesDataWithImdbLink(moviesDataset = "../resources/movies.csv", linksDa
 
 def getGenres(row, imdbInfo):
     genres = set([x.lower() for x in row["genres"].split("|")])
-    genres.union(set([x.lower() for x in imdbInfo["Genre"].split(", ")]))
+    if imdbInfo["Genre"] != "?":
+        genres.union(set([x.lower() for x in imdbInfo["Genre"].split(", ")]))
     return ", ".join(genres)
 
 
@@ -174,4 +175,4 @@ def getCompleteMoviesInformation(moviesDataset = "../resources/movies.csv", link
     moviesData.to_csv("../resources/modified_movies_dataset.csv", sep=',', index=False, encoding='utf-8')
     return moviesData
 
-print getCompleteMoviesInformation()
+#print getCompleteMoviesInformation()
