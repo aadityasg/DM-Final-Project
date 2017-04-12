@@ -31,6 +31,9 @@ def getTokenOccuringOnce(list1, list2):
     return wordCounter
 
 def calculatePlotSimilarity(plot1, plot2):
+    # More info at:
+    # http://nbviewer.jupyter.org/gist/francoiseprovencher/83c595531177ac88e3c0
+    
     plot1 = plot1.decode('unicode-escape')
     plot2 = plot2.decode('unicode-escape')
     
@@ -48,6 +51,5 @@ def calculatePlotSimilarity(plot1, plot2):
     if sim[0][1] > 1:
         return 1
     return sim[0][1]
-
 
 #print calculatePlotSimilarity(str("the ohio state university is a public university").decode('unicode-escape'), str("University of ohio state is a public university").decode('unicode-escape'))
