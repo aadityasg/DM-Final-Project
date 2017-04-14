@@ -19,7 +19,7 @@ def stem_tokens(tokens):
 
 def getNormalizeTokens(text):
     remove_punctuation_map = dict((ord(char), None) for char in string.punctuation)
-    x = stem_tokens(nltk.word_tokenize(text.translate(remove_punctuation_map)))
+    x = stem_tokens(nltk.word_tokenize(text.lower().translate(remove_punctuation_map)))
     return x
 
 def getNameList(text):
@@ -66,6 +66,8 @@ def calculatePlotSimilarity(plot1, plot2):
     names.extend(getNameList(plot1))
     names.extend(getNameList(plot2))
     
+    names = [name.lower() for name in names]
+    
     tokensCounter =  getTokenOccuringOnce(plot1_tokenList, plot2_tokenList)
     
     
@@ -73,11 +75,6 @@ def calculatePlotSimilarity(plot1, plot2):
     plot1_filteredTokens = [item for item in plot1_tokenList if tokensCounter[item] > 1 or item in names]
     plot2_filteredTokens = [item for item in plot2_tokenList if tokensCounter[item] > 1 or item in names]
     
-    print names
-    print plot1_tokenList
-    print plot1_filteredTokens
-    print plot2_filteredTokens
-
     vect = TfidfVectorizer(min_df=1)
     tfidf = vect.fit_transform([" ".join(plot1_filteredTokens), " ".join(plot2_filteredTokens)])
     sim = (tfidf * tfidf.T).A
@@ -85,4 +82,4 @@ def calculatePlotSimilarity(plot1, plot2):
         return 1
     return sim[0][1]
 
-print calculatePlotSimilarity(str("the ohio state university is a public university where John goes to").decode('unicode-escape'), str("University of ohio state is a public university").decode('unicode-escape'))
+#print calculatePlotSimilarity(str("the ohio state university is a public university where John goes to").decode('unicode-escape'), str("University of ohio state is a public university").decode('unicode-escape'))
