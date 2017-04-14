@@ -175,4 +175,4 @@ def getCompleteMoviesInformation(moviesDataset = "../resources/movies.csv", link
     moviesData.to_csv("../resources/modified_movies_dataset.csv", sep=',', index=False, encoding='utf-8')
     return moviesData
 
-#print getCompleteMoviesInformation()
+print getCompleteMoviesInformation()

@@ -1,5 +1,6 @@
 import json
 import urllib
+from copy import deepcopy
 
 dummyData = {'Plot': "?", 
             'Rated': '?', 
