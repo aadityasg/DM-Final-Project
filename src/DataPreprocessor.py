@@ -158,7 +158,8 @@ def getCompleteMoviesInformation(moviesDataset = "../resources/movies.csv", link
         imdbVotesTotal[startIndex:end] = imdbVotes
         RottenTomatoesRatingsTotal[startIndex:end] = RottenTomatoesRatings
         MetacriticRatingsTotal[startIndex:end] = MetacriticRatings
-        
+    
+    moviesData["serialNo"] = pd.Series([i+1 for i in range(len(ActorsTotal))], index=moviesData.index)
     moviesData["Actors"] = pd.Series(ActorsTotal, index=moviesData.index)
     moviesData["Language"] = pd.Series(LanguageTotal, index=moviesData.index)
     moviesData["Director"] = pd.Series(DirectorTotal, index=moviesData.index)
