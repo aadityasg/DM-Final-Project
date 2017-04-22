@@ -19,14 +19,24 @@ reg_movies = 0.1
 cols = ['user_id', 'movie_id', 'rating']
 
 #df = pd.read_csv('u.data', sep='\t', names=cols)
-df = pd.read_csv('ratings_processed.csv')
+cols = ['userId', 'movieId', 'rating', 'timestamp']
+df = pd.read_csv('ratings.csv')
+del df['timestamp']
 #del df['time']
 
-user_list = df['user_id'].drop_duplicates().tolist()
+
+user_list = df['userId'].drop_duplicates().tolist()
 user_list.sort()
 
-movie_list = df['movie_id'].drop_duplicates().tolist()
+movie_list = df['movieId'].drop_duplicates().tolist()
 movie_list.sort()
+
+'''Sorted user and movie list. And replace the user_id or movie_id by the index of the user/movie in 
+the user/movie list'''
+
+for row in range(len(df)):
+    df.set_value(row, 'user_id', int(user_list.index(df.iloc[row]['userId'])))
+    df.set_value(row, 'movie_id', int(movie_list.index(df.iloc[row]['movieId'])))
 
 num_users = len(user_list)
 num_movies = len(movie_list)
@@ -102,9 +112,10 @@ def als_movie(movie_mat, user_mat, ratings):
     return movie_mat
 
 
-itern_list = [ 50, 60, 70, 80, 90, 100]
-k_list = [10, 20, 30, 40, 50]
-lambda_list = np.logspace(-3, 2.0, num=10)
+itern_list = [ 100]
+k_list = [ 30]
+#lambda_list = np.logspace(-3, 2.0, num=2)
+lambda_list = [0.1]
 
 data = []
 
@@ -149,4 +160,3 @@ for lambda_ in lambda_list:
             print "Training MSE: "+str(get_mse(predictions, train)) + " Test MSE: " + str(test_ms)
 
 
-print min(data)
