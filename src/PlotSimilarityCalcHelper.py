@@ -4,6 +4,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk import WordNetLemmatizer as wnl
 from nltk.tree import Tree
 from nltk.tokenize import word_tokenize
+from nltk.corpus import wordnet as wn
 
 nltk.download('wordnet')
 nltk.download('stopwords')
@@ -11,7 +12,8 @@ nltk.download('punkt') # if necessary
 nltk.download('averaged_perceptron_tagger')
 nltk.download("maxent_ne_chunker")
 nltk.download("words")
-
+wn.ensure_loaded() 
+    
 def stem_tokens(tokens):
     stop = nltk.corpus.stopwords.words('english')
     punctuation = u",.;:'()"
@@ -56,8 +58,8 @@ def calculatePlotSimilarity(plot1, plot2):
     # More info at:
     # http://nbviewer.jupyter.org/gist/francoiseprovencher/83c595531177ac88e3c0
     
-    plot1 = plot1.decode('unicode-escape')
-    plot2 = plot2.decode('unicode-escape')
+    plot1 = unicode(str(plot1), 'ascii', 'ignore') #plot1.encode('utf-8')
+    plot2 = unicode(str(plot2), 'ascii', 'ignore') #plot2.encode('utf-8')
     
     plot1_tokenList = getNormalizeTokens(plot1)
     plot2_tokenList = getNormalizeTokens(plot2)
