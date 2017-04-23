@@ -75,9 +75,10 @@ ratings = np.zeros((num_users, num_movies))
 for index, row in df.iterrows():
     ratings[int(row['user_id']), int(row['movie_id'])] = row['rating']
 
-itern_list = [ 50, 60, 70, 80, 90, 100]
-k_list = [10, 20, 30, 40, 50]
-lambda_list = np.logspace(-3, 2.0, num=10)
+itern_list = [ 100]
+k_list = [ 30]
+#lambda_list = np.logspace(-3, 2.0, num=2)
+lambda_list = [0.1]
 
 data = []
 for lambda_ in lambda_list:
