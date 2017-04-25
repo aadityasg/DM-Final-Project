@@ -5,7 +5,7 @@ from nltk import WordNetLemmatizer as wnl
 from nltk.tree import Tree
 from nltk.tokenize import word_tokenize
 from nltk.corpus import wordnet as wn
-
+import pandas as pd
 import hashlib
 
 nltk.download('wordnet')
@@ -58,6 +58,29 @@ def getTokenOccuringOnce(list1, list2):
 
 cache = {}
 
+moviesDataset = "../resources/movielens-100k-dataset/modified-u.item.csv"
+moviesData = pd.read_csv(moviesDataset, dtype=object)
+
+for index2, movie  in moviesData.iterrows():
+    plot = movie["Plot"]
+    plotDigest = hashlib.md5(str(plot)).hexdigest()
+    plot = unicode(str(plot), 'ascii', 'ignore') #plot1.encode('utf-8')
+    
+    plot_tokenList = getNormalizeTokens(plot)
+    
+    names = []
+    names.extend(getNameList(plot))
+    names = [name.lower() for name in names]
+    
+    tokensCounter =  getTokenOccuringOnce(plot_tokenList, [])
+    
+    plot_filteredTokens = [item for item in plot_tokenList if tokensCounter[item] > 1 or item in names]
+    
+    plt = " ".join(plot_filteredTokens)
+    
+    cache[plotDigest] = plt
+    print plotDigest + "  ->  " + plt
+
 def calculatePlotSimilarity(plot1, plot2):
     # More info at:
     # http://nbviewer.jupyter.org/gist/francoiseprovencher/83c595531177ac88e3c0
@@ -65,35 +88,9 @@ def calculatePlotSimilarity(plot1, plot2):
     plot1Digest = hashlib.md5(str(plot1)).hexdigest()
     plot2Digest = hashlib.md5(str(plot2)).hexdigest()
     
-    if plot1Digest in cache.keys() and plot2Digest in cache.keys():
-        plt1 = cache[plot1Digest]
-        plt2 = cache[plot2Digest]
-    else:
-        plot1 = unicode(str(plot1), 'ascii', 'ignore') #plot1.encode('utf-8')
-        plot2 = unicode(str(plot2), 'ascii', 'ignore') #plot2.encode('utf-8')
-        
-        plot1_tokenList = getNormalizeTokens(plot1)
-        plot2_tokenList = getNormalizeTokens(plot2)
-        
-        names = []
-        names.extend(getNameList(plot1))
-        names.extend(getNameList(plot2))
-        
-        names = [name.lower() for name in names]
-        
-        tokensCounter =  getTokenOccuringOnce(plot1_tokenList, plot2_tokenList)
-        
-        
-        
-        plot1_filteredTokens = [item for item in plot1_tokenList if tokensCounter[item] > 1 or item in names]
-        plot2_filteredTokens = [item for item in plot2_tokenList if tokensCounter[item] > 1 or item in names]
-        
-        plt1 = " ".join(plot1_filteredTokens)
-        plt2 = " ".join(plot2_filteredTokens)
-        
-        cache[plot1Digest] = plt1
-        cache[plot2Digest] = plt2
-        
+    plt1 = cache[plot1Digest]
+    plt2 = cache[plot2Digest]
+    
     vect = TfidfVectorizer(min_df=1)
     tfidf = vect.fit_transform([plt1, plt2])
     sim = (tfidf * tfidf.T).A
