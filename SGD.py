@@ -69,36 +69,30 @@ class SGDC():
         for i in range(1, numberOfIterations + 1):
             randomIndices = np.arange(self.mock_len)
             np.random.shuffle(randomIndices)
-            self.sgd(randomIndices)
-            
-    def sgd(self, randomIndices):
-        for i in randomIndices:
-            user = self.mock_row[i]
-            item = self.mock_col[i]
-            prediction = self.find(user, item)
-            error = self.ratingMatrix[user, i] - prediction
-                                     
-            self.userBias[user] += self.learningRate * (error - self.userBiasFactor * self.userBias[user])
-            self.itemBias[item] += self.learningRate * (error - self.itemBiasFactor * self.itemBias[item])
-                             
-            self.userVector[user, :] += self.learningRate * (error * self.itemVector[item, :] - self.userRegularizationFactor * self.userVector[user, :])
-            self.itemVector[item, :] += self.learningRate * (error * self.userVector[user, :] - self.itemRegularizationFactor * self.itemVector[item, :])
-            
+            for j in randomIndices:
+                user = self.mock_row[j]
+                item = self.mock_col[j]
+                prediction = self.find(user, item)
+                error = self.ratingMatrix[user, j] - prediction
+                                         
+                self.userBias[user] += self.learningRate * (error - self.userBiasFactor * self.userBias[user])
+                self.itemBias[item] += self.learningRate * (error - self.itemBiasFactor * self.itemBias[item])
+                                 
+                self.userVector[user, :] += self.learningRate * (error * self.itemVector[item, :] - self.userRegularizationFactor * self.userVector[user, :])
+                self.itemVector[item, :] += self.learningRate * (error * self.userVector[user, :] - self.itemRegularizationFactor * self.itemVector[item, :])
+             
     def get_mse(self, pred, actual):
         pred = pred[actual.nonzero()].flatten()
         actual = actual[actual.nonzero()].flatten()
-        return mean_squared_error(pred, actual)
-        
-    def find(self, user, item):
-        val = self.globalBias + self.userBias[user] + self.itemBias[item]
-        val += self.userVector[user, :].dot(self.itemVector[item, :].T)
-        return val
+        return mean_squared_error(pred, actual) 
 
     def findAll(self):
         values = np.zeros((self.userVector.shape[0], self.itemVector.shape[0]))
         for u in xrange(self.userVector.shape[0]):
             for i in xrange(self.itemVector.shape[0]):
-                values[u, i] = self.find(u, i)
+                val = self.globalBias + self.userBias[u] + self.itemBias[i]
+                val += self.userVector[u, :].dot(self.itemVector[i, :].T)
+                values[u, i] = val
         return values
 
     def train_test_split(self, ratings):
@@ -114,8 +108,8 @@ class SGDC():
 
     def calculateLearningCurve(self, iterArray, learningRate=0.1):
         iterArray.sort()
-        self.trainMSE = []
-        self.testMSE = []
+        trainMSE = []
+        testMSE = []
         iter = 0
         
         train, test = self.train_test_split(self.ratingMatrix)
@@ -136,19 +130,22 @@ class SGDC():
             for i in xrange(self.numberOfItems):
                 findings[u, i] = round(findings[u, i] * 5, 0)
         
-        for index1 in xrange(self.numberOfUsers):
+        """for index1 in xrange(self.numberOfUsers):
             for index2 in xrange(self.numberOfItems):
                 if findings[index1][index2] > 4.1:
                     print('{:4}'.format(self.ratingMatrix[index1][index2]))
                     print('{:4}'.format(findings[index1][index2]))
-                    print(' ')
+                    print(' ')"""
         
-        self.trainMSE += [self.get_mse(findings, train)]
-        self.testMSE += [self.get_mse(findings, test)]
+        trainMSE += [self.get_mse(findings, train)]
+        testMSE += [self.get_mse(findings, test)]
         
-        print ('Train mse: ' + str(self.trainMSE[-1]))
-        print ('Test mse: ' + str(self.testMSE[-1]))
+        print ('Train mse: ' + str(trainMSE[-1]))
+        print ('Test mse: ' + str(testMSE[-1]))
         
         iter = iterN
+        
+        hist = np.histogram(findings.flatten() , bins=[0,1,2,3,4,5,6])
+        print(hist)
         
 s = SGDC(40, 0.3, 0.3, 0.3, 0.3)
