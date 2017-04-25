@@ -3,6 +3,9 @@ import math
 import pandas as pd
 from PlotSimilarityCalcHelper import calculatePlotSimilarity
 from multiprocessing.pool import ThreadPool
+import logging
+
+logging.basicConfig(filename='similarityrun.log',level=logging.DEBUG)
 
 cache = {}
 
@@ -71,9 +74,13 @@ def buildSimilarityMatrix(startIndex, endIndex, moviesData):
         row1 = moviesData.iloc[index1]
         columns["movie_id"].append(row1["movie_id"])
         for index2, row2  in moviesData.iterrows():
+            
             key1 = str(row2["movie_id"]) + "<->" + str(row1["movie_id"])
             key2 = str(row1["movie_id"]) + "<->" + str(row2["movie_id"])
-            print key2
+            
+            if index2 % 100 == 0:
+                print key2
+            
             if key1 not in cache.keys() and key2 not in cache.keys():
                 similarity = computeMovieSimilarity(row1, row2)
                 cache[key1] = similarity
@@ -94,7 +101,7 @@ def main():
     moviesDataset = "../resources/movielens-100k-dataset/modified-u.item.csv"
     moviesData = pd.read_csv(moviesDataset, dtype=object)
 
-    pool = ThreadPool(processes=10)
+    pool = ThreadPool(processes=20)
     incrementFactor = 5#len(moviesData)/1000
     startIndex = 0
     endIndex = startIndex + incrementFactor
