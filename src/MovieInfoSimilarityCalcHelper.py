@@ -31,7 +31,7 @@ def computeMovieSimilarity(movie1, movie2):
     if movie2["imdbRating"] == "?":
         movie2Rating = 5
     else:
-        movie2Rating = float(movie1["imdbRating"])
+        movie2Rating = float(movie2["imdbRating"])
     
     actors1 = [actor.strip() for actor in str(movie1["Actors"]).split(",")]
     actors2 = [actor.strip() for actor in str(movie2["Actors"]).split(",")]
@@ -95,14 +95,14 @@ def buildSimilarityMatrix(startIndex, endIndex, moviesData):
             columns[row2["movie_id"]] = similarity
         index1 += 1
     print "**********************"
-    return pd.DataFrame.from_dict(columns, index=columns["movie_id"])
+    return pd.DataFrame.from_dict(columns)
 
 def main():
     moviesDataset = "../resources/movielens-100k-dataset/modified-u.item.csv"
     moviesData = pd.read_csv(moviesDataset, dtype=object)
 
     pool = ThreadPool(processes=20)
-    incrementFactor = 5#len(moviesData)/1000
+    incrementFactor = 1#len(moviesData)/1000
     startIndex = 0
     endIndex = startIndex + incrementFactor
     
@@ -114,14 +114,16 @@ def main():
         endIndex = startIndex + incrementFactor
         
     parentDf = None
-    
+    flag = True
     for result in results:
         df = result[0].get()
         if parentDf is None:
             parentDf = df
         else:
-            parentDf = pd.concat(parentDf, df)
-    
+            parentDf = pd.concat([parentDf, df])
+            if flag:
+                parentDf.to_csv("../resources/movielens-100k-dataset/similarities1.csv", sep=',', index=False, encoding='utf-8')
+                flag = False
     parentDf.to_csv("../resources/movielens-100k-dataset/similarities.csv", sep=',', index=False, encoding='utf-8')
 
 if __name__ == "__main__":
