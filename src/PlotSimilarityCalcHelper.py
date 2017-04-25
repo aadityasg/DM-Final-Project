@@ -91,6 +91,9 @@ def calculatePlotSimilarity(plot1, plot2):
     plt1 = cache[plot1Digest]
     plt2 = cache[plot2Digest]
     
+    if len(plt1) == 0 or len(plt2) == 0:
+        return 0
+    
     vect = TfidfVectorizer(min_df=1)
     tfidf = vect.fit_transform([plt1, plt2])
     sim = (tfidf * tfidf.T).A
