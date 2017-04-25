@@ -102,7 +102,7 @@ def main():
     moviesData = pd.read_csv(moviesDataset, dtype=object)
 
     pool = ThreadPool(processes=20)
-    incrementFactor = 1#len(moviesData)/1000
+    incrementFactor = 10#len(moviesData)/1000
     startIndex = 0
     endIndex = startIndex + incrementFactor
     
