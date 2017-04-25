@@ -4,23 +4,9 @@ import numpy
 from copy import deepcopy
 from multiprocessing.pool import ThreadPool
 
-def getMoviesDataWithImdbLink(moviesDataset = "../resources/movies.csv", linksDataset = "../resources/links.csv"):
-    moviesData = pd.read_csv(moviesDataset, dtype=object)
-    linksData = pd.read_csv(linksDataset, dtype=object)
-
-    moviesData["imdbId"] = pd.Series(linksData["imdbId"], index=linksData.index)
-    return moviesData
-
-
-def getGenres(row, imdbInfo):
-    genres = set([x.lower() for x in row["genres"].split("|")])
-    if imdbInfo["Genre"] != "?":
-        genres.union(set([x.lower() for x in imdbInfo["Genre"].split(", ")]))
-    return ", ".join(genres)
-
-
 def buildInformationArray(moviesData, startIndex, endIndex):
     emptyData = []
+    imdbIDs = deepcopy(emptyData)
     Actors, Language, Plot, Rated, Director = deepcopy(emptyData), deepcopy(emptyData), deepcopy(emptyData), deepcopy(emptyData), deepcopy(emptyData)
     Released, Year, Writer, imdbRating, imdbVotes = deepcopy(emptyData), deepcopy(emptyData), deepcopy(emptyData), deepcopy(emptyData), deepcopy(emptyData) 
     RottenTomatoesRatings, MetacriticRatings = deepcopy(emptyData), deepcopy(emptyData)
@@ -29,18 +15,18 @@ def buildInformationArray(moviesData, startIndex, endIndex):
     while index < endIndex and index < len(moviesData):
         row = moviesData.iloc[index]
         index += 1
-        imdbInfo = omdb.getMovieInformation(row["imdbId"])
+        imdbInfo = omdb.getMovieInformation(row["movie_title"])
         #print json.dumps(imdbInfo, indent=4, sort_keys=True)
         
         counter += 1
         if counter % 50 == 0:
             print counter
         
-        
-        if "Genre" in imdbInfo.keys():
-            row["genres"] = getGenres(row, imdbInfo)
+        if "imdbID" in imdbInfo.keys():
+            imdbIDs.append(imdbInfo["imdbID"])
+        else:
+            imdbIDs.append("?")
             
-        
         if "Actors" in imdbInfo.keys():
             Actors.append(imdbInfo["Actors"])
         else:
@@ -110,15 +96,24 @@ def buildInformationArray(moviesData, startIndex, endIndex):
             RottenTomatoesRatings.append("?")
             MetacriticRatings.append("?")
         
-    return (Actors, Language, Plot, Rated, Director, Released, Year, Writer, imdbRating, imdbVotes, RottenTomatoesRatings, MetacriticRatings, index)
+    return (imdbIDs, Actors, Language, Plot, Rated, Director, Released, Year, Writer, imdbRating, imdbVotes, RottenTomatoesRatings, MetacriticRatings, index)
 
 
-def getCompleteMoviesInformation(moviesDataset = "../resources/movies.csv", linksDataset = "../resources/links.csv"):
-    moviesData = getMoviesDataWithImdbLink(moviesDataset, linksDataset)
+def getCompleteMoviesInformation(moviesDataset = "../resources/movielens-100k-dataset/u.item"):
     
-    emptyData = numpy.empty_like(moviesData["movieId"])
+    headers = ["movie_id", "movie_title", "release_date", "video_release_date",
+              "IMDb_URL", "unknown", "Action", "Adventure", "Animation",
+              "Childrens", "Comedy", "Crime", "Documentary", "Drama", "Fantasy",
+              "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi",
+              "Thriller", "War", "Western"]
+    
+    moviesData = pd.read_csv(moviesDataset, dtype=object, sep="|", header=None)
+    moviesData.columns = headers
+    
+    emptyData = numpy.empty_like(moviesData["movie_id"])
     emptyData[:] = "?"
     
+    imdbIDsTotal = deepcopy(emptyData)
     ActorsTotal, LanguageTotal, PlotTotal, RatedTotal, DirectorTotal = deepcopy(emptyData), deepcopy(emptyData), deepcopy(emptyData), deepcopy(emptyData), deepcopy(emptyData)
     ReleasedTotal, YearTotal, WriterTotal, imdbRatingTotal, imdbVotesTotal = deepcopy(emptyData), deepcopy(emptyData), deepcopy(emptyData), deepcopy(emptyData), deepcopy(emptyData) 
     RottenTomatoesRatingsTotal, MetacriticRatingsTotal = deepcopy(emptyData), deepcopy(emptyData)
@@ -139,12 +134,13 @@ def getCompleteMoviesInformation(moviesDataset = "../resources/movies.csv", link
         # do some other stuff in the main process
     
     for result in results:
-        Actors, Language, Plot, Rated, Director, Released, \
+        imdbIDs, Actors, Language, Plot, Rated, Director, Released, \
         Year, Writer, imdbRating, imdbVotes, RottenTomatoesRatings, \
         MetacriticRatings, end = result[0].get()
         
         startIndex = result[1]
         
+        imdbIDsTotal[startIndex:end] = imdbIDs
         ActorsTotal[startIndex:end] = Actors
         YearTotal[startIndex:end] = Year
         LanguageTotal[startIndex:end] = Language
@@ -160,6 +156,7 @@ def getCompleteMoviesInformation(moviesDataset = "../resources/movies.csv", link
         MetacriticRatingsTotal[startIndex:end] = MetacriticRatings
     
     moviesData["serialNo"] = pd.Series([i+1 for i in range(len(ActorsTotal))], index=moviesData.index)
+    moviesData["imdbID"] = pd.Series(imdbIDsTotal, index=moviesData.index)
     moviesData["Actors"] = pd.Series(ActorsTotal, index=moviesData.index)
     moviesData["Language"] = pd.Series(LanguageTotal, index=moviesData.index)
     moviesData["Director"] = pd.Series(DirectorTotal, index=moviesData.index)
@@ -172,8 +169,8 @@ def getCompleteMoviesInformation(moviesDataset = "../resources/movies.csv", link
     moviesData["Metacritic"] = pd.Series(MetacriticRatingsTotal, index=moviesData.index)
     moviesData["imdbRating"] = pd.Series(imdbRatingTotal, index=moviesData.index)
     moviesData["imdbVotes"] = pd.Series(imdbVotesTotal, index=moviesData.index)
-    
-    moviesData.to_csv("../resources/modified_movies_dataset.csv", sep=',', index=False, encoding='utf-8')
+
+    moviesData.to_csv("../resources/movielens-100k-dataset/modified-u.item.csv", sep=',', index=False)
     return moviesData
 
 print getCompleteMoviesInformation()
