@@ -13,28 +13,30 @@ def get_mse(pred, actual):
 
 ''' Number of latent factors'''
 
+reg_user = 0.1
+reg_movies = 0.1
 
+cols = ['user_id', 'movie_id', 'rating']
 
-
-cols = ['user_id', 'movie_id', 'rating', 'timestamp']
-df = pd.read_csv('u.data', sep='\t', names=cols)
+#df = pd.read_csv('u.data', sep='\t', names=cols)
+cols = ['userId', 'movieId', 'rating', 'timestamp']
+df = pd.read_csv('ratings.csv')
 del df['timestamp']
 #del df['time']
 
-#print df
 
-user_list = df['user_id'].drop_duplicates().tolist()
+user_list = df['userId'].drop_duplicates().tolist()
 user_list.sort()
 
-movie_list = df['movie_id'].drop_duplicates().tolist()
+movie_list = df['movieId'].drop_duplicates().tolist()
 movie_list.sort()
 
 '''Sorted user and movie list. And replace the user_id or movie_id by the index of the user/movie in 
 the user/movie list'''
 
-'''for row in range(len(df)):
-    df.set_value(row, 'user_ID', int(user_list.index(df.iloc[row]['user_id'])))
-    df.set_value(row, 'movie_ID', int(movie_list.index(df.iloc[row]['movie_id'])))'''
+for row in range(len(df)):
+    df.set_value(row, 'user_id', int(user_list.index(df.iloc[row]['userId'])))
+    df.set_value(row, 'movie_id', int(movie_list.index(df.iloc[row]['movieId'])))
 
 num_users = len(user_list)
 num_movies = len(movie_list)
@@ -65,7 +67,7 @@ ratings = np.zeros((num_users, num_movies))
 for row in range(len(df)):
 
     #print df.iloc[row]['user_id']
-    ratings[int(df.iloc[row]['user_id']-1), int(df.iloc[row]['movie_id'])-1] = df.iloc[row]['rating']
+    ratings[int(df.iloc[row]['user_id']), int(df.iloc[row]['movie_id'])] = df.iloc[row]['rating']
 
 
 def predict(u, i):
@@ -110,13 +112,12 @@ def als_movie(movie_mat, user_mat, ratings):
     return movie_mat
 
 
-itern_list = [ 50]
-k_list = [ 40,50,60]
+itern_list = [ 100]
+k_list = [ 30]
 #lambda_list = np.logspace(-3, 2.0, num=2)
 lambda_list = [0.1]
 
 data = []
-#print df
 
 for lambda_ in lambda_list:
     #row = []
