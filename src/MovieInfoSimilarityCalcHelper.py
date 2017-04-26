@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import math
 import pandas as pd
@@ -78,21 +79,19 @@ def buildSimilarityMatrix(startIndex, endIndex, moviesData):
             key1 = str(row2["movie_id"]) + "<->" + str(row1["movie_id"])
             key2 = str(row1["movie_id"]) + "<->" + str(row2["movie_id"])
             
-            if index2 % 100 == 0:
-                print key2
+            #if index2 % 100 == 0:
+            #    print key2
             
-            if key1 not in cache.keys() and key2 not in cache.keys():
+            if key1 not in cache.keys():
                 similarity = computeMovieSimilarity(row1, row2)
                 cache[key1] = similarity
                 cache[key2] = similarity
-            elif key1 in cache.keys():
-                similarity = cache[key1]
             else:
-                similarity = cache[key2]
+                similarity = cache[key1]
                 
             if row2["movie_id"] not in columns.keys():
                 columns[row2["movie_id"]] = []
-            columns[row2["movie_id"]] = similarity
+            columns[row2["movie_id"]].append(similarity)
         index1 += 1
     print "**********************"
     return pd.DataFrame.from_dict(columns)
@@ -101,9 +100,9 @@ def main():
     moviesDataset = "../resources/movielens-100k-dataset/modified-u.item.csv"
     moviesData = pd.read_csv(moviesDataset, dtype=object)
 
-    pool = ThreadPool(processes=20)
-    incrementFactor = 10#len(moviesData)/1000
-    startIndex = 0
+    pool = ThreadPool(processes=1)
+    incrementFactor = 10 #len(moviesData)/1000
+    startIndex = int(sys.argv[1])
     endIndex = startIndex + incrementFactor
     
     results = []
@@ -112,6 +111,7 @@ def main():
         results.append((async_result, startIndex, endIndex))
         startIndex = endIndex
         endIndex = startIndex + incrementFactor
+	break
         
     parentDf = None
     flag = True
@@ -119,12 +119,14 @@ def main():
         df = result[0].get()
         if parentDf is None:
             parentDf = df
-        else:
-            parentDf = pd.concat([parentDf, df])
-            if flag:
-                parentDf.to_csv("../resources/movielens-100k-dataset/similarities1.csv", sep=',', index=False, encoding='utf-8')
-                flag = False
+	    #else:
+            #parentDf = pd.concat([parentDf, df])
+            parentDf.to_csv("../resources/movielens-100k-dataset/similarities-inc-"+str(sys.argv[1])+".csv", sep=',', index=False, encoding='utf-8')
+	    print "Done!!"
+	    exit(1)
+            flag = False
     parentDf.to_csv("../resources/movielens-100k-dataset/similarities.csv", sep=',', index=False, encoding='utf-8')
 
 if __name__ == "__main__":
+    print sys.argv[1]
     main()
