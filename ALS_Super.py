@@ -3,6 +3,7 @@ from numpy.linalg import inv
 import pandas as pd
 from sklearn.metrics import mean_squared_error
 
+
 import math as math
 
 def get_mse(pred, actual):
@@ -43,7 +44,7 @@ def train_test_split(ratings):
     train = ratings.copy()
     for user in xrange(ratings.shape[0]):
         test_ratings = np.random.choice(ratings[user, :].nonzero()[0],
-                                        size=12,
+                                        size=10,
                                         replace=False)
 
         train[user, test_ratings] = 0.
@@ -109,21 +110,21 @@ def als_movie(movie_mat, user_mat, ratings):
     return movie_mat
 
 
-itern_list = [70]
-k_list = [30,40,50]
+itern_list = [40]
+k_list = [10,20,30,40,50]
 lambda_list = np.logspace(-3, 2.0, num=10)
 
 
 data = []
 w = 0.005
-threshold = 0.70
+threshold = 0.85
 df1 = pd.read_csv('similarities-final.csv')
-d= df1.values
+d = df1.values
 
 def sim(movie_id_1, movie_id_2):
 
     global d
-    #print "Indices : "+str(movie_id_1) + " " + str(movie_id_2)
+    #print "Indices : "+str(movie_id_1) + " " + str(movie_id_2 )
     if math.isnan(d[movie_id_1-1][movie_id_2 - 1]):
         return 0
     return d[movie_id_1-1][movie_id_2 - 1]
@@ -142,35 +143,48 @@ for lambda_ in lambda_list:
     row = []
     for k in k_list:
         print "k = " + str(k)
+        for iter_cur in itern_list:
+            print "Iterations = " + str(iter_cur)
+            #row.append(iter_cur)
+            user_matrix = np.random.random((num_users, k))
+            movie_matrix = np.random.random((num_movies, k))
+            for j in range(iter_cur):
 
-        df_predictions = pd.read_csv("Lambda_" + str(lambda_) + "_" + str(k) + ".csv")
-        pred_val = df_predictions.values
-        predictions = np.zeros((num_users, num_movies))
-        for u in xrange(num_users):
-            user_ratings_copy = []
-            user_ratings_copy = list(ratings[u, :])
-            #user_ratings_copy.sort()
-            max_rating = max(user_ratings_copy)
-            representatives = [q for q, x in enumerate(user_ratings_copy) if x == max_rating]
-            for i in xrange(num_movies):
-                predictions[u, i] = pred_val[u][i+1]
-                for cur_representative_movie in representatives:
-                    #print "Movies: " + str(cur_representative_movie+1) + " "+str(i+1)
-                    similarity = sim(cur_representative_movie + 1, i + 1)
-                    if similarity > threshold:
-                        predictions[u, i] += w * max_rating * similarity
-                #print predictions[u, i]
-            #print predictions[u, :]
-        pred_max, pred_min = predictions.max(), predictions.min()
-        predictions = (predictions - pred_min) / (pred_max - pred_min)
+                movie_matrix = als_movie(movie_mat=movie_matrix, user_mat=user_matrix, ratings=train)
+
+                user_matrix = als_user(movie_mat=movie_matrix, user_mat=user_matrix, ratings=train)
+
+            #df_predictions = pd.read_csv("Lambda_" + str(lambda_) + "_" + str(k) + ".csv")
+            #pred_val = df_predictions.values
+            predictions = np.zeros((num_users, num_movies))
+            for u in xrange(num_users):
+                user_ratings_copy = []
+                user_ratings_copy = list(ratings[u, :])
+                #user_ratings_copy.sort()
+                max_rating = max(user_ratings_copy)
+                representatives = [q for q, x in enumerate(user_ratings_copy) if x == max_rating]
+                for i in xrange(num_movies):
+                    predictions[u, i] = predict(u, i)
+                    for cur_representative_movie in representatives:
+                        #print "Movies: " + str(cur_representative_movie+1) + " "+str(i+1)
+                        similarity = sim(cur_representative_movie + 1, i + 1)
+                        if similarity > threshold:
+                           # print "Pevious" +str(predictions[u,i])
+                            predictions[u, i] += (w * max_rating * similarity)
+                            #print "AFter" + str(predictions[u, i])
+                    #print predictions[u, i]
+                #print predictions[u, :]
+            pred_max, pred_min = predictions.max(), predictions.min()
+            predictions = (predictions - pred_min) / (pred_max - pred_min)
 
 
-        for u in xrange(num_users):
-            for i in xrange(num_movies):
-                predictions[u, i] = round(predictions[u, i] * 5, 0)
-        test_ms = get_mse(predictions, test)
-        row.append(test_ms)
-        print "Training MSE: "+str(get_mse(predictions, train)) + " Test MSE: " + str(test_ms)
+            for u in xrange(num_users):
+                for i in xrange(num_movies):
+                    predictions[u, i] = round(predictions[u, i] * 5, 0)
+            test_ms = get_mse(predictions, test)
+            #print predictions[12, 12]
+            row.append(test_ms)
+            print "Training MSE: "+str(get_mse(predictions, train)) + " Test MSE: " + str(test_ms)
 
     data.append(row)
 
