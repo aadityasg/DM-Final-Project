@@ -13,9 +13,6 @@ def get_mse(pred, actual):
 
 ''' Number of latent factors'''
 
-
-
-
 cols = ['user_id', 'movie_id', 'rating', 'timestamp']
 df = pd.read_csv('u.data', sep='\t', names=cols)
 del df['timestamp']
@@ -44,8 +41,10 @@ def train_test_split(ratings):
     test = np.zeros(ratings.shape)
     train = ratings.copy()
     for user in xrange(ratings.shape[0]):
+        count = np.count_nonzero(ratings[user, :])
+        count = int(count * 0.2)
         test_ratings = np.random.choice(ratings[user, :].nonzero()[0],
-                                        size=10,
+                                        size=count,
                                         replace=False)
 
         train[user, test_ratings] = 0.
@@ -110,24 +109,24 @@ def als_movie(movie_mat, user_mat, ratings):
     return movie_mat
 
 
-itern_list = [ 50]
-k_list = [ 40,50,60]
-#lambda_list = np.logspace(-3, 2.0, num=2)
-lambda_list = [0.1]
+itern_list = [50]
+k_list = [10,20,30,40,50]
+lambda_list = np.logspace(-3, 2.0, num=10)
+#lambda_list = [0.1]
 
 data = []
 #print df
 
 for lambda_ in lambda_list:
-    #row = []
+
     reg_user = lambda_
     reg_movies = lambda_
     train, test = train_test_split(ratings=ratings)
     print " --------- lambda = " + str(lambda_) + "-------------"
-    #row.append(lambda_)
+    row = []
     for k in k_list:
         print "k = " + str(k)
-        #row.append(k)
+
         for iter_cur in itern_list:
             print "Iterations = " + str(iter_cur)
             #row.append(iter_cur)
@@ -150,12 +149,15 @@ for lambda_ in lambda_list:
             for u in xrange(num_users):
                 for i in xrange(num_movies):
                     predictions[u, i] = round(predictions[u, i] * 5, 0)
-
-            #print predictions[12][32]
-            #row.append(get_mse(predictions, train))
-            #row.append(get_mse(predictions, test))
             test_ms = get_mse(predictions, test)
-            data.append(test_ms)
+            row.append(test_ms)
+            print predictions[12, 12]
             print "Training MSE: "+str(get_mse(predictions, train)) + " Test MSE: " + str(test_ms)
+            pred_df = pd.DataFrame(data=predictions, columns = range(num_movies))
+            #del pred_df[0]
+            #pred_df.to_csv("Lambda_"+str(lambda_)+"_"+str(k)+".csv")
+    data.append(row)
 
 
+
+print data
