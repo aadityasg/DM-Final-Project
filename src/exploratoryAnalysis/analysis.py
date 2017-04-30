@@ -144,10 +144,65 @@ def analyseRatingPattern():
     sns.barplot(x="Genre", y="Rating", hue="Gender", data=parentDf)
     sns.plt.show()
 
+def analyseRatingPattern2():
+    df = pd.read_csv("../../resources/movielens-100k-dataset/GenderRatingGenreOccupation.csv", dtype=object)
+    data = {}
+    
+    occupation_list = ["administrator", "artist", "doctor",
+                       "educator", "engineer", "entertainment", "executive",
+                       "healthcare", "homemaker", "lawyer", "librarian",
+                       "marketing", "none", "other", "programmer",
+                       "retired", "salesman", "scientist", "student",
+                       "technician", "writer"]
+    
+    genres_list = ["unknown", "Action", "Adventure", "Animation",
+                   "Childrens", "Comedy", "Crime", "Documentary", 
+                   "Drama", "Fantasy", "Film-Noir", "Horror", "Musical", 
+                   "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"]
+    
+    """data = {"Gender": [], "Rating":[], "Genre": [], "Occupation":[]}""" 
+    for _, row in df.iterrows():
+        key = row["Occupation"] + "<=>" + row["Genre"]
+        if key not in data.keys():
+            data[key] = list()
+            data[key].append(0)
+            data[key].append(0)
+            
+        data[key][0] += float(row["Rating"])
+        data[key][1] += 1
+        
+    print "Here!!!"
+    print len(occupation_list)
+    print len(genres_list)
+    
+    dt = np.zeros(shape=(len(occupation_list), len(genres_list)))
+    for idx1, occupation in zip(range(len(occupation_list)), occupation_list):
+        for idx2, genre in zip(range(len(genres_list)), genres_list):
+            key = occupation + "<=>" + genre
+            if key in data.keys():
+                dt[idx1][idx2] = data[key][0] / float(data[key][1])
+            else:
+                dt[idx1][idx2] = 0
+    
+    fig, ax = sns.plt.subplots()
+    heatmap = ax.pcolor(dt, cmap='RdBu_r')
+    
+    # put the major ticks at the middle of each cell
+    ax.set_xticks(np.arange(dt.shape[0])+0.5, minor=False)
+    ax.set_yticks(np.arange(dt.shape[1])+0.5, minor=False)
+    
+    # want a more natural, table-like display
+    #ax.invert_yaxis()
+    #ax.xaxis.tick_top()
+    
+    ax.set_xticklabels(genres_list, minor=False)
+    ax.set_yticklabels(occupation_list, minor=False)
+    sns.plt.show()
 
 #df = pd.read_csv("../../resources/movielens-100k-dataset/GenreGenderRating-Final.csv", sep=',', dtype=object, header=None)
+analyseRatingPattern2()
 analyseRatingPattern()
-#analyseMovieByGenre()
-#analyseUserByOccupation()
-#analyseUserDataset()
-#analyseMovieByReleaseDate()
+analyseMovieByGenre()
+analyseUserByOccupation()
+analyseUserDataset()
+analyseMovieByReleaseDate()
