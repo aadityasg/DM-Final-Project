@@ -180,5 +180,7 @@ for threshold in t_list:
 
     print data
 
-print min_val
+
+df_final_predictions = pd.DataFrame(predictions)
+df_final_predictions.to_csv("final_predictions.csv")
 
