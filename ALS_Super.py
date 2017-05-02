@@ -18,9 +18,7 @@ def get_mse(pred, actual):
 cols = ['user_id', 'movie_id', 'rating', 'timestamp']
 df = pd.read_csv('u.data', sep='\t', names=cols)
 del df['timestamp']
-#del df['time']
 
-#print df
 
 user_list = df['user_id'].drop_duplicates().tolist()
 user_list.sort()
@@ -28,12 +26,6 @@ user_list.sort()
 movie_list = df['movie_id'].drop_duplicates().tolist()
 movie_list.sort()
 
-'''Sorted user and movie list. And replace the user_id or movie_id by the index of the user/movie in 
-the user/movie list'''
-
-'''for row in range(len(df)):
-    df.set_value(row, 'user_ID', int(user_list.index(df.iloc[row]['user_id'])))
-    df.set_value(row, 'movie_ID', int(movie_list.index(df.iloc[row]['movie_id'])))'''
 
 num_users = len(user_list)
 num_movies = len(movie_list)
@@ -45,6 +37,7 @@ def train_test_split(ratings):
     for user in xrange(ratings.shape[0]):
         count = np.count_nonzero(ratings[user,: ])
         count = int(count * 0.2)
+        # Take 20% of each row's non zero elements as test elements
         test_ratings = np.random.choice(ratings[user, :].nonzero()[0],
                                         size=count,
                                         replace=False)
@@ -58,15 +51,10 @@ def train_test_split(ratings):
 '''Creating a rating matrix'''
 
 ratings = np.zeros((num_users, num_movies))
-#print df.iloc[1]['user_id']
 
-#print user_list
-#print movie_list
-#print df
 
 for row in range(len(df)):
 
-    #print df.iloc[row]['user_id']
     ratings[int(df.iloc[row]['user_id']-1), int(df.iloc[row]['movie_id'])-1] = df.iloc[row]['rating']
 
 
@@ -119,21 +107,21 @@ lambda_list = np.logspace(-3, 2.0, num=10)
 
 
 w = 0.005
-threshold = 0.85
+threshold = 0.55
 df1 = pd.read_csv('similarities-final.csv')
 d = df1.values
 
 def sim(movie_id_1, movie_id_2):
 
     global d
-    #print "Indices : "+str(movie_id_1) + " " + str(movie_id_2 )
+  
     if math.isnan(d[movie_id_1-1][movie_id_2 - 1]):
         return 0
     return d[movie_id_1-1][movie_id_2 - 1]
-    #return df1.ix[movie_id_1 - 1, str(movie_id_2)]
 
 
-t_list = [0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+
+t_list = [0.5, 0.55]
 min_val = 300
 for threshold in t_list:
     print "Threshold = "+str(threshold)
@@ -149,7 +137,6 @@ for threshold in t_list:
             print "k = " + str(k)
             for iter_cur in itern_list:
 
-                #row.append(iter_cur)
                 user_matrix = np.random.random((num_users, k))
                 movie_matrix = np.random.random((num_movies, k))
                 for j in range(iter_cur):
@@ -158,26 +145,22 @@ for threshold in t_list:
 
                     user_matrix = als_user(movie_mat=movie_matrix, user_mat=user_matrix, ratings=train)
 
-                #df_predictions = pd.read_csv("Lambda_" + str(lambda_) + "_" + str(k) + ".csv")
-                #pred_val = df_predictions.values
+
                 predictions = np.zeros((num_users, num_movies))
                 for u in xrange(num_users):
                     user_ratings_copy = []
                     user_ratings_copy = list(ratings[u, :])
-                    #user_ratings_copy.sort()
+                    
                     max_rating = max(user_ratings_copy)
                     representatives = [q for q, x in enumerate(user_ratings_copy) if x == max_rating]
                     for i in xrange(num_movies):
                         predictions[u, i] = predict(u, i)
                         for cur_representative_movie in representatives:
-                            #print "Movies: " + str(cur_representative_movie+1) + " "+str(i+1)
+                            
                             similarity = sim(cur_representative_movie + 1, i + 1)
-                            if similarity > threshold:
-                               # print "Pevious" +str(predictions[u,i])
+                            if similarity > threshold and (cur_representative_movie != i):
                                 predictions[u, i] += (w * max_rating * similarity)
-                                #print "AFter" + str(predictions[u, i])
-                        #print predictions[u, i]
-                    #print predictions[u, :]
+
                 pred_max, pred_min = predictions.max(), predictions.min()
                 predictions = (predictions - pred_min) / (pred_max - pred_min)
 
@@ -186,9 +169,9 @@ for threshold in t_list:
                     for i in xrange(num_movies):
                         predictions[u, i] = round(predictions[u, i] * 5, 0)
                 test_ms = get_mse(predictions, test)
-                if min_val < test_ms:
+                if min_val > test_ms:
                     min_val = test_ms
-                #print predictions[12, 12]
+
                 row.append(test_ms)
                 print "Training MSE: "+str(get_mse(predictions, train)) + " Test MSE: " + str(test_ms)
 
